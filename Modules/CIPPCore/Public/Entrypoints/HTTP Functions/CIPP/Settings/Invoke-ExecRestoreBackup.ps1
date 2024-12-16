@@ -3,19 +3,21 @@ using namespace System.Net
 Function Invoke-ExecRestoreBackup {
     <#
     .FUNCTIONALITY
-    Entrypoint
+        Entrypoint
+    .ROLE
+        CIPP.AppSettings.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
     $APIName = $TriggerMetadata.FunctionName
     Write-LogMessage -user $request.headers.'x-ms-client-principal' -API $APINAME -message 'Accessed this API' -Sev 'Debug'
-    try { 
-        foreach ($line in ($Request.body | ConvertFrom-Json | Select-Object * -ExcludeProperty ETag)) {
+    try {
+        foreach ($line in ($Request.body | ConvertFrom-Json | Select-Object * -ExcludeProperty ETag, Timestamp)) {
             Write-Host ($line)
             $Table = Get-CippTable -tablename $line.table
             $ht2 = @{}
-            $line.psobject.properties | ForEach-Object { $ht2[$_.Name] = [string]$_.Value }
+            $line.psobject.properties | Where-Object { $_.Name -ne 'table' } | ForEach-Object { $ht2[$_.Name] = [string]$_.Value }
             $Table.Entity = $ht2
             Add-CIPPAzDataTableEntity @Table -Force
 
@@ -23,7 +25,7 @@ Function Invoke-ExecRestoreBackup {
         Write-LogMessage -user $request.headers.'x-ms-client-principal' -API $APINAME -message 'Created backup' -Sev 'Debug'
 
         $body = [pscustomobject]@{
-            'Results' = 'Succesfully restored backup.' 
+            'Results' = 'Successfully restored backup.'
         }
     } catch {
         Write-LogMessage -user $request.headers.'x-ms-client-principal' -API $APINAME -message "Failed to create backup: $($_.Exception.Message)" -Sev 'Error'

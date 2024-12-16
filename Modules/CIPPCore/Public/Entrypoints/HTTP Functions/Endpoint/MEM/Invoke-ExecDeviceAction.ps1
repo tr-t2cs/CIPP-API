@@ -3,7 +3,9 @@ using namespace System.Net
 Function Invoke-ExecDeviceAction {
     <#
     .FUNCTIONALITY
-    Entrypoint
+        Entrypoint
+    .ROLE
+        Endpoint.MEM.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
@@ -14,11 +16,23 @@ Function Invoke-ExecDeviceAction {
     # Interact with query parameters or the body of the request.
 
 
-    try {   
+    try {
         if ($Request.Query.Action -eq 'setDeviceName') {
             $ActionBody = @{ deviceName = $Request.Body.input } | ConvertTo-Json -Compress
-        }  
-        $ActionResult = New-CIPPDeviceAction -Action $Request.Query.Action -ActionBody $ActionBody -DeviceFilter $Request.Query.GUID -TenantFilter $Request.Query.TenantFilter -ExecutingUser $request.headers.'x-ms-client-principal' -APINAME $APINAME
+        }
+        else {
+            $ActionBody = $Request.Body | ConvertTo-Json -Compress
+        }
+
+        $cmdparams = @{
+            Action = $Request.Query.Action
+            ActionBody = $ActionBody
+            DeviceFilter = $Request.Query.GUID
+            TenantFilter = $Request.Query.TenantFilter
+            ExecutingUser = $request.headers.'x-ms-client-principal'
+            APINAME = $APINAME
+        }
+        $ActionResult = New-CIPPDeviceAction @cmdparams
         $body = [pscustomobject]@{'Results' = "$ActionResult" }
 
     } catch {

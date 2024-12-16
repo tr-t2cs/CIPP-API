@@ -4,6 +4,8 @@ function Invoke-ExecOnboardTenant {
     <#
     .FUNCTIONALITY
         Entrypoint
+    .ROLE
+        Tenant.Administration.ReadWrite
     #>
     param($Request, $TriggerMetadata)
 
@@ -17,7 +19,7 @@ function Invoke-ExecOnboardTenant {
             if ($Request.Query.Cancel -eq $true) {
                 $TenantOnboarding = Get-CIPPAzDataTableEntity @OnboardTable -Filter "RowKey eq '$Id'"
                 if ($TenantOnboarding) {
-                    Remove-AzDataTableEntity @OnboardTable -Entity $TenantOnboarding
+                    Remove-AzDataTableEntity -Force @OnboardTable -Entity $TenantOnboarding
                     $Results = @{'Results' = 'Onboarding job canceled' }
                     $StatusCode = [HttpStatusCode]::OK
                 } else {
